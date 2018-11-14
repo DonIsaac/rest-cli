@@ -49,7 +49,7 @@ async function* parseFiles(dir, options = {}) {
  * @param {PathLike} filePath 
  * @param {object} options 
  */
-async function parseFile(filePath, options) {
+async function parseFile(filePath, options = {}) {
     let stream = !!options.stream;
     let encoding = options.encoding || 'utf8';
     let recursive = options.recursive == null || !!options.recursive;
@@ -62,7 +62,7 @@ async function parseFile(filePath, options) {
             } else {
                 // TODO: Make generator
                 let obj = {}
-                for await (let file of parseFilesGen(filePath + '/', options)) {
+                for await (let file of parseFiles(filePath + '/', options)) {
                     obj = Object.assign(obj, file);
                 }
                 return obj;
@@ -98,10 +98,16 @@ async function parseFile(filePath, options) {
  * @param {string} options      optional options object
  */
 async function copyTemplates(name, templateDir, replacements, options = {}) {
+    // Where the newly created files should end up
     let dest = options.destination || `${process.cwd()}/${(options.isCaseSensitive ? name : name.toLowerCase())}/`;
+    // Ensure that it ends with a '/', otherwise problems are caused down the road
+    if(!dest.endsWith('/')){
+        dest += '/';
+    }
+
+    // create a new parseFiles() generator
     let templates = {};
     let writeArray = [];
-
     try {
         await Promise.try(() => mkdir(dest, { recursive: true }));
         templates = await parseFiles(templateDir, options);
@@ -113,7 +119,13 @@ async function copyTemplates(name, templateDir, replacements, options = {}) {
         }
     }
 
-    MapUtils.processElement(templates, (key, value) => {
+    // Iterate over the parseFiles() generator
+    let templateDict = {};
+    for await (let template of templates) {
+        Object.assign(templateDict, template);
+    }
+    // Apply string replacements
+    MapUtils.processElement(templateDict, (key, value) => {
         let newFileName = key;
         let newFileContents = value;
 
@@ -127,13 +139,39 @@ async function copyTemplates(name, templateDir, replacements, options = {}) {
 
             writeArray.push(writeFile(dest + newFileName, newFileContents, { encoding: 'utf8' }));
         } else {
-            options.destination = dest + file;
-            writeArray.push(copyTemplates2(name, templateDir + key, replacements, options));
+            // If the contents aren't a string then the file is a dictionary. Parse recursively.
+            options.destination = dest + key;
+
+            // TODO: Don't recursively call copyTemplates, only processElement();
+            writeArray.push(copyTemplates(name, `${templateDir}${key}/`, replacements, options));
         }
 
-
     });
+
     return Promise.all(writeArray);
+}
+
+function doReplace (key, val) {
+    let newFileName = key;
+    let newFileContents = value;
+
+    if (typeof newFileContents === 'string') {
+        for (let regex in replacements.keys) {
+            newFileName = newFileName.replace(new RegExp(regex, 'g'), replacements.keys[regex]);
+        }
+        for (let regex in replacements.values) {
+            newFileContents = newFileContents.replace(new RegExp(regex, 'g'), replacements.values[regex]);
+        }
+
+        writeArray.push(writeFile(dest + newFileName, newFileContents, { encoding: 'utf8' }));
+    } else {
+        // If the contents aren't a string then the file is a dictionary. Parse recursively.
+        options.destination = dest + key;
+
+        // TODO: Don't recursively call copyTemplates, only processElement();
+        writeArray.push(copyTemplates(name, `${templateDir}${key}/`, replacements, options));
+    }
+
 }
 
 module.exports = { parseFiles, copyTemplates };
@@ -194,17 +232,99 @@ module.exports = { parseFiles, copyTemplates };
     for (let file in templates) {
         if (typeof file === "string") {
             let newFileName = file.replace('template', name);*/
-            /**@type {string} */
-            //let text = templates[file].replace();
-            /*for (let replacement in replacements) {
-                text = text.replace(new RegExp(replacement, 'g'), replacements[replacement]);
-            }
-            writeArray.push(writeFile(dest + newFileName, text, { encoding: 'utf8' }));
+/**@type {string} */
+//let text = templates[file].replace();
+/*for (let replacement in replacements) {
+    text = text.replace(new RegExp(replacement, 'g'), replacements[replacement]);
+}
+writeArray.push(writeFile(dest + newFileName, text, { encoding: 'utf8' }));
+} else {
+options.destination = dest + file;
+writeArray.push(copyTemplates(name, templateDir + file, replacements, options));
+}
+}
+
+await Promise.all(writeArray);
+}*/
+
+async function main() {
+    let templateDir = `${__dirname}/templates/test/`;
+    let name = 'widget';
+    let options = {
+        recursive: false
+    }
+    let replacements = {
+        keys: {
+            'template': name.toLowerCase(),
+            'Template': name.charAt(0).toUpperCase().concat(name.substr(1))
+        },
+        values: {
+            'template': name.toLowerCase(),
+            'Template': name.charAt(0).toUpperCase().concat(name.substr(1))
+        }
+    }
+    //await parseFile(templateDir).then(console.dir).catch(console.error);
+    /*for await (let file of parseFiles(templateDir, {})) {
+        console.dir(file);
+    }*/
+    await copyTemplates(name, templateDir, replacements, options).then(console.dir).catch(console.error);
+}
+
+main();
+
+
+/*
+async function copyTemplates(name, templateDir, replacements, options = {}) {
+    // Where the newly created files should end up
+    let dest = options.destination || `${process.cwd()}/${(options.isCaseSensitive ? name : name.toLowerCase())}/`;
+    // Ensure that it ends with a '/', otherwise problems are caused down the road
+    if(!dest.endsWith('/')){
+        dest += '/';
+    }
+
+    // create a new parseFiles() generator
+    let templates = {};
+    let writeArray = [];
+    try {
+        await Promise.try(() => mkdir(dest, { recursive: true }));
+        templates = await parseFiles(templateDir, options);
+    } catch (err) {
+        if (err.code == "EEXIST") {
+            return `A component with the name ${name} already exists. Aborting.`;
         } else {
-            options.destination = dest + file;
-            writeArray.push(copyTemplates(name, templateDir + file, replacements, options));
+            throw err;
         }
     }
 
-    await Promise.all(writeArray);
-}*/
+    // Iterate over the parseFiles() generator
+    let templateDict = {};
+    for await (let template of templates) {
+        Object.assign(templateDict, template);
+    }
+    // Apply string replacements
+    MapUtils.processElement(templateDict, (key, value) => {
+        let newFileName = key;
+        let newFileContents = value;
+
+        if (typeof newFileContents === 'string') {
+            for (let regex in replacements.keys) {
+                newFileName = newFileName.replace(new RegExp(regex, 'g'), replacements.keys[regex]);
+            }
+            for (let regex in replacements.values) {
+                newFileContents = newFileContents.replace(new RegExp(regex, 'g'), replacements.values[regex]);
+            }
+
+            writeArray.push(writeFile(dest + newFileName, newFileContents, { encoding: 'utf8' }));
+        } else {
+            // If the contents aren't a string then the file is a dictionary. Parse recursively.
+            options.destination = dest + key;
+
+            // TODO: Don't recursively call copyTemplates, only processElement();
+            writeArray.push(copyTemplates(name, `${templateDir}${key}/`, replacements, options));
+        }
+
+    });
+
+    return Promise.all(writeArray);
+}
+*/

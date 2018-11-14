@@ -97,6 +97,17 @@ const MapUtils = module.exports = {
         for(let key in obj){
             task(key, obj[key]);
         }
+    },
+
+    processElementRecursively(obj, task) {
+        for(let key in obj){
+            if(typeof obj[key] === 'object'){
+                MapUtils.processElementRecursively(obj[key], task);
+            } else {
+                task(key, obj[key]);
+            }
+            
+        }
     }
 }
 
