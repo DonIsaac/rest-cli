@@ -18,9 +18,14 @@
     "http"
   ],
   "author": "Donald Isaac",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "bugs": {
     "url": "https://github.com/DonIsaac/rest-cli/issues"
   },
-  "homepage": "https://github.com/DonIsaac/rest-cli#readme"
+  "homepage": "https://github.com/DonIsaac/rest-cli#readme",
+  "dependencies": {
+    "argparse": "^1.0.10",
+    "bluebird": "^3.5.3",
+    "fs": "0.0.1-security"
+  }
 }
