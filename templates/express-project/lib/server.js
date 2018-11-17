@@ -1,6 +1,5 @@
-
 const debug = require('debug')('app:launcher'),
-    config = require('./config.json');
+    config = require('../config.json');
 
 const app = require('./app')(config);
 
