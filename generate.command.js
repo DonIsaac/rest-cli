@@ -31,10 +31,16 @@ module.exports = function generate({ component, name, isCaseSensitive }) {
     isCaseSensitive = !!isCaseSensitive;
 
     let replacements = {
-        'template': name.toLowerCase(),
-        'Template': name.charAt(0).toUpperCase().concat(name.substr(1))
+        keys: {
+            'template': name.toLowerCase(),
+            'Template': name.charAt(0).toUpperCase().concat(name.substr(1))
+        },
+        values: {
+            'template': name.toLowerCase(),
+            'Template': name.charAt(0).toUpperCase().concat(name.substr(1))
+        }
     }
-    
+
     return copyTemplates(name, templateFolders[component], replacements, { isCaseSensitive });
     //.catch(OperationalError, err => {
     //    return (`A component with the name ${name} already exists. Aborting.`);

@@ -1,6 +1,7 @@
 const bluebird = require('bluebird');
 const fs = bluebird.promisifyAll(require('fs'));
 
+// TODO: Make this work lol
 /*
  1) check if a file is a directory or a file
  2) if it's a file, return an object containg the filename/contents

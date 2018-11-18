@@ -98,10 +98,7 @@ async function parseFile(filePath, options = {}) {
  * @param {string} options      optional options object
  */
 async function copyTemplates(name, templateDir, replacements, options = {}) {
-
-
-
-    // create a new parseFiles() generator
+    // TODO: Clean up and make it suck less
     let templates = {};
     let writeArray = [];
     try {
@@ -199,6 +196,9 @@ async function copyTemplates(name, templateDir, replacements, options = {}) {
 }
 module.exports = { parseFiles, copyTemplates };
 
+/**
+ * Main method for testing purposes
+ */
 async function main() {
     let templateDir = `${__dirname}/templates/test/`;
     let name = 'widget';
@@ -222,7 +222,7 @@ async function main() {
     await copyTemplates(name, templateDir, replacements, options).then(console.dir).catch(console.error);
 }
 
-main();
+//main();
 
 // Old code that I don't want to throw away just yet
 
